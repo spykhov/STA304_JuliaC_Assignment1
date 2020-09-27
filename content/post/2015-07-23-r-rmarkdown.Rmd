@@ -1,5 +1,5 @@
 ---
-title: "STA304 Julia's Assignment#1"
+title: "STA304 Julia's Assignment1"
 author: "Julia C"
 date: '2015-07-23T21:13:14-05:00'
 bibliography: references.bib
