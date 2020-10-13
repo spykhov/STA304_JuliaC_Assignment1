@@ -1,0 +1,185 @@
+---
+title: Equitable Bank AMZ stock
+author: Harmin Bajwa
+date: "`r Sys.Date()`"
+slug: equitable-bank-amz-stock
+categories:
+  - R
+tags:
+  - R Markdown
+output:
+  tufte::tufte_html:
+    toc: yes
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+  html_document:
+    toc: yes
+    df_print: paged
+  pdf_document:
+    toc: yes
+link-citations: yes
+always_allow_html: yes
+---
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+
+packages_w4 <- c("dplyr","ggplot2","fpp2","fpp3","dygraphs","ggfortify","forecast","tidyquant","tidyverse","knitr","Rmisc","gridExtra","graphics")
+new.packages <- packages_w4[!(packages_w4 %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+library(fpp2)
+library(ggfortify)
+library(forecast)
+library(dygraphs)
+library(ggplot2)
+library(gridExtra)
+library(Rmisc)
+library(graphics)
+library(tidyquant)
+library(tidyverse)
+library(forecast)
+library(highcharter)
+
+#source("multiplot.r")
+```
+```{r}
+# to mute warnings
+options("getSymbols.warning4.0"=FALSE)
+# stock ticker of Equitable Bank
+# tickers <- c("FB", "AAPL", "MSFT","GOOGL","TSLA","AMZ","EQB.TO")
+tickers<-c("AMZ") 
+# retrieve EQ bank stock price online
+prices <- getSymbols(tickers, src = 'yahoo', from = "2012-06-01",to= "2020-09-30", 
+                   auto.assign = TRUE, warnings = FALSE) 
+# Keep the adjusted stock prices 
+#EQB = get(prices)$FB.Adjusted
+#get(prices)%>%names()
+EQB = get(prices)[,6] #Adjusted
+#EQB = get(prices)[,4] #Close prices
+# plot daily stock prices
+hc <- highchart(type = "stock") %>% 
+        hc_title(text = paste("Charting stock price ",tickers)) %>% 
+        hc_add_series(EQB, name=tickers)%>%
+        hc_add_theme(hc_theme_flat())
+hc
+```
+
+```{r}
+# summary statistics of daily adjusted closed prices
+summary(EQB)%>%knitr::kable(digits =4, format = "html")
+# Retrieve  monthly stock prices
+mEQB = to.monthly(EQB)[,4]%>%as.ts(start = start(to.monthly(EQB)))
+# plot monthly stock prices
+ts.plot(mEQB, main =paste(tickers," monthly stock price time series"), ylab="price"); grid()
+```
+```{r}
+# We then conduct the classical decomposition using stl function
+# what do we have after using `stl`
+mEQB.stl<- stl(mEQB, s.window="per")
+
+plot(mEQB.stl, main="Illustration of classical decomposition using STL")
+mEQB.stl%>%autoplot()+ylab("")+
+ ggtitle("Illustration of classical decomposition using STL") + 
+  theme(plot.title = element_text(size=8, face="bold"))# + theme_minimal()
+```
+```{r}
+# We then conduct the  decomposition using decompose function
+
+mEQB.decomp <- decompose(mEQB) #, type = "multiplicative")
+plot(mEQB.decomp)
+mEQB.decomp%>%autoplot()+ylab("")+
+ ggtitle("Illustration of additive time series decomposition using decompose function") + 
+  theme(plot.title = element_text(size=8, face="bold"))
+
+```
+```{r}
+# Compare trend and seasonal components between two decomposition
+par(mfrow=c(1,2))
+plot(mEQB.stl$time.series[,"trend"], main="STL and decompose trends", ylab="", cex.main=0.8)
+lines(mEQB.decomp$trend, col=2, lty="dashed",lwd=2)
+
+plot(mEQB.stl$time.series[,"seasonal"], main="STL and decompose seasonals", ylab="", cex.main=0.8)
+lines(mEQB.decomp$seasonal, col=2, lty="dashed",lwd=2)
+```
+```{r}
+# pick up 'irregular` component from classical decomposition'
+mEQB.stl.remainder<-mEQB.stl$time.series[,"remainder"]
+autoplot(mEQB.stl.remainder)+
+ ylab("")+
+ ggtitle("Irregular component using STL function") + 
+  theme(plot.title = element_text(size=8, face="bold"))# + theme_minimal()
+```
+
+
+```{r}
+# Retreive the irregular component from decomp
+
+#Plot the irregular component
+mEQB.decomp.remainder<- na.omit(mEQB.decomp$random)
+autoplot(mEQB.decomp.remainder)+
+ ylab("")+
+ ggtitle("Irregular component using decompose function")+theme(plot.title = element_text(size=8, face="bold"))
+
+```
+```{r}
+p3 = autoplot(mEQB.decomp.remainder)+
+        ggtitle("decompe-irregular")+ ylab("")+
+        theme(plot.title = element_text(size=8, face="bold"))
+p4 = autoplot(mEQB.stl.remainder)+
+        ggtitle("STL-irregular")+ ylab("")+
+        theme(plot.title = element_text(size=8, face="bold"))
+p1 = ggAcf(mEQB.decomp.remainder, na.action = na.omit)+
+        ggtitle("decompe-ACF")+
+        theme(plot.title = element_text(size=8, face="bold"))
+p2 = ggAcf(mEQB.stl.remainder, na.action = na.omit)+
+        ggtitle("STL-ACF")+
+        theme(plot.title = element_text(size=8, face="bold"))
+grid.arrange(p3, p4, p1,p2, ncol=2)
+```
+# Analysis of irregular components
+## Constructing ACF plot from scratch
+```{r}
+# calculate the length of decomp time series
+nd = mEQB.decomp.remainder%>%complete.cases()%>%length()
+
+# pick the values of sample ACF functions lag = 0 to 24
+mlag =24
+acfs = acf(mEQB.decomp.remainder, na.action = na.omit, plot = FALSE, lag.max = mlag)$acf%>%c()
+mi = min(acfs[-1])
+ma = max(acfs[-1])
+ub = 2*sqrt(1/nd)
+barplot(acfs[-1], ylim = c(mi-0.3,ma+0.3), col="lightblue", main = "decomp-ACF")
+abline(h = 2*sqrt(1/nd), col = "red", lty ="dotted", lwd = 2)
+abline(h = -2*sqrt(1/nd), col = "orange", lty = "dotted", lwd = 2)
+```
+```{r}
+#Finding the largest significant lag
+(nq.ma.decomp = c((abs(acfs[-1])>(2*sqrt(1/nd)))*(1:mlag))%>%max())
+
+```
+
+```{r}
+
+#Repeat the calculation for STL
+ns = length(mEQB.stl.remainder)
+acfs = acf(mEQB.stl.remainder, 
+           na.action = na.omit, plot = FALSE, lag.max = mlag)$acf%>%c()
+mi = min(acfs[-1])
+ma = max(acfs[-1])
+ub = 2*sqrt(1/nd)
+barplot(acfs[-1], ylim = c(mi-0.3,ma+0.3), col="lightgray")
+abline(h = 2*sqrt(1/nd), col = "red", lty ="dotted", lwd = 2)
+abline(h = -2*sqrt(1/nd), col = "orange", lty = "dotted", lwd = 2)
+```
+```{r}
+#Finding the largest significant lag
+
+(nq.ma.stl = c((abs(acfs[-1])>(2*sqrt(1/nd)))*(1:mlag))%>%max())
+
+```
+```{r}
+sprintf("We select MA(%d) model and MA(%d) for irregular components decomposing from decompose and stl, respectively.",nq.ma.decomp,nq.ma.stl)
+```
