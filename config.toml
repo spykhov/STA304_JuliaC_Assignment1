@@ -1,4 +1,4 @@
-baseurl = "https://julia-sta304-assignment1.netlify.app/"
+baseurl = "https://sta457-timeseries.netlify.app/"
 languageCode = "en-us"
 title = "Julia's website"
 theme = "hugo-lithium"
