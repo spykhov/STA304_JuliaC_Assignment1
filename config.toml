@@ -1,10 +1,10 @@
 baseurl = "https://sta457-timeseries.netlify.app/"
 languageCode = "en-us"
-title = "Julia's website"
+title = "STA457 website"
 theme = "hugo-lithium"
 googleAnalytics = ""
 disqusShortname = ""
-ignoreFiles = ["\\.Rmarkdown$", "_files$", "_cache$"]
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [permalinks]
     post = "/:year/:month/:day/:slug/"
