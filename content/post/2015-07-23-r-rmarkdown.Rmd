@@ -25,6 +25,10 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 You can embed an R code chunk like this:
 
 ```{r cars}
+library(tidyquant)
+library(tidyverse)
+library(forecast)
+library(highcharter)
 options("getSymbols.warning4.0"=FALSE)
 # stock ticker of Equitable Bank
 # tickers <- c("FB", "AAPL", "MSFT","GOOGL","TSLA","AMZ","EQB.TO")
@@ -42,7 +46,7 @@ hc <- highchart(type = "stock") %>%
         hc_title(text = paste("Charting stock price ",tickers)) %>% 
         hc_add_series(EQB, name=tickers)%>%
         hc_add_theme(hc_theme_flat())
-hc
+#hc
 ```
 
 # Including Plots
