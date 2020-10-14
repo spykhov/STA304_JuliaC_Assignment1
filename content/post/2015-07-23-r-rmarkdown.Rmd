@@ -25,6 +25,10 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 You can embed an R code chunk like this:
 
 ```{r cars}
+library(tidyquant)
+library(tidyverse)
+library(forecast)
+library(highcharter)
 options("getSymbols.warning4.0"=FALSE)
 # stock ticker of Equitable Bank
 # tickers <- c("FB", "AAPL", "MSFT","GOOGL","TSLA","AMZ","EQB.TO")

@@ -4,7 +4,11 @@ title = "STA457 website"
 theme = "hugo-lithium"
 googleAnalytics = ""
 disqusShortname = ""
+<<<<<<< HEAD
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_cache$"]
+=======
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
+>>>>>>> fe6ce2d7048718695540dfb8f6770c4ac554e3b6
 
 [permalinks]
     post = "/:year/:month/:day/:slug/"
